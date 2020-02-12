@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.linalg import solve_triangular
 import multiprocessing as mp
+import matplotlib.pyplot as plt
 
 
 output = mp.Queue()
@@ -13,7 +14,7 @@ def parallel_qr(matrix):
     r1 = np.concatenate(rs)
     q, r2 = np.linalg.qr(r1)
     qs2 = np.array_split(q, num)
-    qs = map(np.matmul, qs1, qs2)
+    qs = list(map(np.matmul, qs1, qs2))
     return np.concatenate(qs), r2
 
 
@@ -23,4 +24,23 @@ def least_squares(matrix, vector):
     return solve_triangular(r, rhs)
 
 
-def 
+def generate_row(degree, elem):
+    return list(map(lambda i: elem ** i, range(0, degree + 1)))
+
+
+def generate_points(coefs, min_x, max_x):
+    xs = np.linspace(min_x, max_x, num=100)
+    ys = list(map(lambda x: np.polyval(np.flip(np.array(coefs), axis=0), x), xs))
+    return xs, ys
+
+
+def process_data1():
+    x, y = np.loadtxt("Data/Data1", unpack=True)
+    matrix = list(map(lambda e: generate_row(2, e), x))
+    coefs = least_squares(matrix, y)
+    plt.plot(x, y, 'ro')
+    plt.plot(*generate_points(coefs, min(x), max(x)))
+    plt.show()
+
+
+process_data1()
