@@ -3,8 +3,6 @@ from scipy.linalg import solve_triangular
 import multiprocessing as mp
 import matplotlib.pyplot as plt
 
-
-output = mp.Queue()
 num = mp.cpu_count()
 
 
@@ -34,6 +32,12 @@ def generate_points(coefs, min_x, max_x):
     return xs, ys
 
 
+def cart_to_pol(x, y):
+    r = np.sqrt(x**2 + y**2)
+    theta = np.arctan2(y, x)
+    return theta, r
+
+
 def process_data1():
     x, y = np.loadtxt("Data/Data1", unpack=True)
     matrix = list(map(lambda e: generate_row(2, e), x))
@@ -43,4 +47,16 @@ def process_data1():
     plt.show()
 
 
-process_data1()
+def process_data2():
+    x, y = np.loadtxt("Data/Data2", unpack=True)
+    thetas, rs = zip(*list(map(cart_to_pol, x, y)))
+    t = np.unwrap(thetas)
+    matrix = list(map(lambda e: generate_row(1, e), t))
+    coefs = least_squares(matrix, rs)
+    ax = plt.subplot(111, polar=True)
+    ax.plot(t, rs, 'ro')
+    ax.plot(*generate_points(coefs, min(t), max(t)))
+    plt.show()
+
+
+process_data2()
