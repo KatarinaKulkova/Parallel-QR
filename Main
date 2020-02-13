@@ -81,14 +81,14 @@ def plot_data(polar, x, y, coefs):
         plt.show()
 
 
-def process_data(path, polar):
+def process_data(path, polar, degree):
     x, y = np.loadtxt(path, unpack=True)
     arg1 = x
     arg2 = y
     if polar:
         ts, arg2 = zip(*list(map(cart_to_pol, x, y)))
         arg1 = np.unwrap(ts)
-    matrix = list(map(lambda e: generate_row(1, e), arg1))
+    matrix = list(map(lambda e: generate_row(degree, e), arg1))
     coefs = least_squares(matrix, arg2)
     plot_data(polar, arg1, arg2, coefs)
 
@@ -114,4 +114,5 @@ def process_data2():
     plt.show()
 
 
-process_data("Data/Data2", True)
+process_data("Data/Data1", False, 2)
+process_data("Data/Data2", True, 1)
