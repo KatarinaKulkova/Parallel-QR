@@ -2,22 +2,53 @@ import numpy as np
 from scipy.linalg import solve_triangular
 import multiprocessing as mp
 import matplotlib.pyplot as plt
+from multiprocessing import Pool
 
 num = mp.cpu_count()
 
 
+# Parallel QR factorisation using the Python inbuilt qr factorisation function
 def parallel_qr(matrix):
     ms = np.array_split(matrix, num)
-    qs1, rs = zip(*map(np.linalg.qr, ms))
+    p = Pool(num)
+    qs1, rs = zip(*p.map(np.linalg.qr, ms))
     r1 = np.concatenate(rs)
     q, r2 = np.linalg.qr(r1)
     qs2 = np.array_split(q, num)
-    qs = list(map(np.matmul, qs1, qs2))
+    qs = list(p.starmap(np.matmul, zip(qs1, qs2)))
     return np.concatenate(qs), r2
 
 
+def householder_qr(matrix):
+    matrix = np.array(matrix)
+    m, n = np.shape(matrix)
+    r = np.array(matrix)
+    qt = np.identity(m)
+    for i in range(n-1):
+        id = np.identity(n)
+
+        x = np.array(matrix[i:, i])
+        e = np.zeros(np.shape(x))
+        e[0] = 1
+        v = e*np.sign(x[0])*np.linalg.norm(x) + x
+        v = v/np.linalg.norm(v)
+
+        f = np.identity(np.size(v)) - 2*(np.outer(v, v)/np.inner(v, v))
+
+        qk = np.identity(m)
+        qk[i:, i:] = f
+
+        qt = np.matmul(qk, qt)
+
+    r = np.matmul(qt, r)
+    r = r[0:n, 0:]
+    qt = qt[0:n, 0:]
+    return np.transpose(qt), r
+
+
+# Solves the least squares problem.
 def least_squares(matrix, vector):
-    q, r = parallel_qr(matrix)
+    q, r = householder_qr(matrix)
     rhs = np.dot(np.transpose(q), vector)
     return solve_triangular(r, rhs)
 
@@ -57,7 +88,7 @@ def process_data(path, polar):
     if polar:
         ts, arg2 = zip(*list(map(cart_to_pol, x, y)))
         arg1 = np.unwrap(ts)
-    matrix = list(map(lambda e: generate_row(2, e), arg1))
+    matrix = list(map(lambda e: generate_row(1, e), arg1))
     coefs = least_squares(matrix, arg2)
     plot_data(polar, arg1, arg2, coefs)
 
