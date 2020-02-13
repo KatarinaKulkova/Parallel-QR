@@ -38,6 +38,30 @@ def cart_to_pol(x, y):
     return theta, r
 
 
+def plot_data(polar, x, y, coefs):
+    if not polar:
+        plt.plot(x, y, 'ro')
+        plt.plot(*generate_points(coefs, min(x), max(x)))
+        plt.show()
+    if polar:
+        ax = plt.subplot(111, polar=True)
+        ax.plot(x, y, 'ro')
+        ax.plot(*generate_points(coefs, min(x), max(x)))
+        plt.show()
+
+
+def process_data(path, polar):
+    x, y = np.loadtxt(path, unpack=True)
+    arg1 = x
+    arg2 = y
+    if polar:
+        ts, arg2 = zip(*list(map(cart_to_pol, x, y)))
+        arg1 = np.unwrap(ts)
+    matrix = list(map(lambda e: generate_row(2, e), arg1))
+    coefs = least_squares(matrix, arg2)
+    plot_data(polar, arg1, arg2, coefs)
+
+
 def process_data1():
     x, y = np.loadtxt("Data/Data1", unpack=True)
     matrix = list(map(lambda e: generate_row(2, e), x))
@@ -59,4 +83,4 @@ def process_data2():
     plt.show()
 
 
-process_data2()
+process_data("Data/Data2", True)
